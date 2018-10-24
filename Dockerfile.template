@@ -1,0 +1,24 @@
+# debian:stretch with dump1090 / PiAware / rtl-sdr drivers installed
+# see more about PiAware https://flightaware.com/adsb/piaware/
+# see more about dockerfile templates here: http://docs.resin.io/deployment/docker-templates/
+# and about resin base images here: http://docs.resin.io/runtime/resin-base-images/
+FROM resin/%%RESIN_MACHINE_NAME%%-debian:stretch
+RUN apt-get update && \
+    apt-get dist-upgrade && \
+    apt-get install -yq wget git cmake build-essential libusb-1.0-0-dev
+RUN wget http://flightaware.com/adsb/piaware/files/packages/pool/piaware/p/piaware-support/piaware-repository_3.6.3_all.deb && \
+    dpkg -i piaware-repository_3.6.3_all.deb && \
+    apt-get update
+RUN apt-get install -yq piaware dump1090-fa && \
+    piaware-config allow-auto-updates yes && piaware-config allow-manual-updates yes
+RUN git clone git://git.osmocom.org/rtl-sdr.git && \
+    cd rtl-sdr && \
+    mkdir build && \
+    cd build && \
+    cmake ../ -DINSTALL_UDEV_RULES=ON && \
+    make && \
+    make install && \
+    ldconfig && \
+    cd .. && \
+    cp rtl-sdr.rules /etc/udev/rules.d
+ENV INITSYSTEM on
